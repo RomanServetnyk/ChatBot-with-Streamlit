@@ -194,37 +194,45 @@ def signup_page():
     st.title("Sign Up")
     new_email = st.text_input("Email")
     new_password = st.text_input("New Password", type='password')
-    if st.button("Sign Up"):
-        if not is_valid_email(new_email):
-            st.error("Invalid email format")
-        elif not is_valid_password(new_password):
-            st.error("Password must be at least 8 characters long, contain a letter, a number, and a special character")
-        else:
-            create_user(new_email, new_password)
-            st.success("User created successfully!")
+    confirm_password = st.text_input("Confirm Password", type='password')
+    
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
+        if st.button("Sign Up", use_container_width=True):
+            if not is_valid_email(new_email):
+                st.error("Invalid email format")
+            elif not is_valid_password(new_password):
+                st.error("Password must be at least 8 characters long, contain a letter, a number, and a special character")
+            elif new_password != confirm_password:
+                st.error("Passwords do not match")
+            else:
+                create_user(new_email, new_password)
+                st.success("User created successfully!")
+                st.session_state['page'] = "login"
+                st.experimental_rerun()
+        if st.button("Go to Sign In", use_container_width=True):
             st.session_state['page'] = "login"
             st.experimental_rerun()
-    if st.button("Go to Sign In"):
-        st.session_state['page'] = "login"
-        st.experimental_rerun()
 
 def login_page():
-    st.title("Login")
+    st.title("Sign In")
     email = st.text_input("Email")
     password = st.text_input("Password", type="password")
-    if st.button("Login"):
-        if authenticate_user(email, password):
-            user_id = get_user_id(email)  # Get the user ID
-            st.session_state["logged_in"] = True
-            st.session_state["email"] = email
-            st.session_state["user_id"] = user_id
-
+    col1, col2, col3 = st.columns([1, 3, 1])
+    with col2:
+        if st.button("Sign In", use_container_width=True):
+            if authenticate_user(email, password):
+                user_id = get_user_id(email)  # Get the user ID
+                st.session_state["logged_in"] = True
+                st.session_state["email"] = email
+                st.session_state["user_id"] = user_id
+                st.experimental_rerun()
+            else:
+                st.error("Invalid email or password")
+  
+        if st.button("Go to Sign Up", use_container_width=True):
+            st.session_state['page'] = 'signup'
             st.experimental_rerun()
-        else:
-            st.error("Invalid email or password")
-    if st.button("Go to Sign Up"):
-        st.session_state['page'] = 'signup'
-        st.experimental_rerun()
 
 def logout():
     st.session_state.clear()
@@ -244,14 +252,6 @@ def display_question():
 @st.experimental_dialog("PDF View", width="large")
 def vote(item):
     st.write(item)
-# if "vote" not in st.session_state:
-#     st.write("Vote for your favorite")
-#     if st.button("A"):
-#         vote("A")
-#     if st.button("B"):
-#         vote("B")
-# else:
-#     f"You voted for {st.session_state.vote['item']} because {st.session_state.vote['reason']}"
 
 def main_content():
 
@@ -279,7 +279,7 @@ def main_content():
             vote("No PDF flie")
     st.sidebar.button('Clear Chat History', on_click=clear_chat_history, use_container_width=True)
 
-    st.sidebar.button('Logout', on_click=logout)
+    st.sidebar.button('SignOut', on_click=logout)
     # Chat input
     # Placeholder for chat messages
 
@@ -320,13 +320,17 @@ def main_content():
         if response is not None:
             message = {"role": "assistant", "content": full_response}
             st.session_state.messages.append(message)
+        st.experimental_rerun()
 
 def main():
-    """Main function to execute the Streamlit app."""
+    """Main function to execute the Streamlit app."""            
     # Creating session state variables if they're not already created
     if "logged_in" not in st.session_state:
         st.session_state["logged_in"] = False
         st.session_state['page'] = 'login'
+
+    if "user_id" in st.session_state and st.session_state["user_id"]:
+        st.session_state["logged_in"] = True
 
     if st.session_state['logged_in']:
         main_content()
